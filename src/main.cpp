@@ -1,13 +1,14 @@
 #include <SFML/Graphics.hpp>
-#include "Board.h"
+
+#include "board.h"
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(360, 640), "SFML Tetris");
+    sf::RenderWindow window(sf::VideoMode(320, 480), "SFML Tetris");
 
     Board board;
 
     sf::Clock clock;
-    float fallTime = 0.5f; // 控制方块下落时间间隔
+    float fallTime = 0.5f;
     float deltaTime = 0.0f;
 
     while (window.isOpen()) {
@@ -15,34 +16,31 @@ int main() {
 
         sf::Event event;
         while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
-                window.close();
+            if (event.type == sf::Event::Closed) window.close();
+
+            if (event.type == sf::Event::KeyPressed) {
+                if (event.key.code == sf::Keyboard::Left)
+                    board.moveCurrentTetromino(-1, 0);
+                else if (event.key.code == sf::Keyboard::Right)
+                    board.moveCurrentTetromino(1, 0);
+                else if (event.key.code == sf::Keyboard::Down)
+                    board.moveCurrentTetromino(0, 1);
+                else if (event.key.code == sf::Keyboard::Up)
+                    board.rotateCurrentTetromino();
             }
-            // if (event.type == sf::Event::KeyPressed) {
-            //     if (event.key.code == sf::Keyboard::Left) {
-            //         board.moveCurrentBlock(-1, 0);
-            //     } else if (event.key.code == sf::Keyboard::Right) {
-            //         board.moveCurrentBlock(1, 0);
-            //     } else if (event.key.code == sf::Keyboard::Down) {
-            //         board.moveCurrentBlock(0, 1);
-            //     } else if (event.key.code == sf::Keyboard::Up) {
-            //         board.rotateCurrentBlock();
-            //     }
-            // }
         }
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-            fallTime = 0.05f; // 按住向下箭头键可以加速方块下落
-        } else {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+            fallTime = 0.05f;
+        else
             fallTime = 0.5f;
+
+        if (board.update(deltaTime, fallTime)) {
+            window.close();
         }
-        // if (board.update(deltaTime, fallTime)) {
-        //     // 游戏结束逻辑
-        //     window.close();
-        // }
 
         window.clear(sf::Color::White);
-        // board.draw(window);
+        board.draw(window, "images/background.png");
         window.display();
     }
 
