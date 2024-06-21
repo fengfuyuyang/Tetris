@@ -77,11 +77,11 @@ void Tetromino::rotate(const sf::Vector2i board[10][20]) {
     updateShape();
 }
 
-void Tetromino::draw(sf::RenderWindow& window) {
-    for (int i = 0; i < 4; ++i) {
-        window.draw(shape[i]);
-    }
-}
+// void Tetromino::draw(sf::RenderWindow& window) {
+//     for (int i = 0; i < 4; ++i) {
+//         window.draw(shape[i]);
+//     }
+// }
 
 void Tetromino::updateShape() {
     for (int i = 0; i < 4; ++i) {
