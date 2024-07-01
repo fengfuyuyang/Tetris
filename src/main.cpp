@@ -1,14 +1,15 @@
+#include "background.h"
 #include "square.h"
+#include "tetromino.h"
 
 void start() {
-    Square square("images/tetromino.png");
+    Square square(L"images\\tetromino.png");
     int side_length = square.GetSideLength();
-
-    sf::Texture texture;
-    texture.loadFromFile("images/background.png");
-
-    sf::RenderWindow window(sf::VideoMode(texture.getSize().x, texture.getSize().y), "SFML Tetris");
-
+    Background background(L"images\\background.png", side_length);
+    int width = background.GetSize().x;
+    int height = background.GetSize().y;
+    sf::RenderWindow window(sf::VideoMode(width, height), "SFML Tetris");
+    I_Tetromino tetromino(square, background.GetBounds());
 
     while (window.isOpen()) {
         sf::Event event;
@@ -16,26 +17,22 @@ void start() {
             if (event.type == sf::Event::Closed) {
                 window.close();
             }
-            // if (event.type == sf::Event::KeyPressed) {
-            //     if (event.key.code == sf::Keyboard::Up) {
-            //     } else if (event.key.code == sf::Keyboard::Down) {
-
-            //     } else if (event.key.code == sf::Keyboard::Left) {
-
-            //     } else if (event.key.code == sf::Keyboard::Right) {
-
-            //     }
-            // }
+            if (event.type == sf::Event::KeyPressed) {
+                if (event.key.code == sf::Keyboard::Up) {
+                    tetromino.Rotate();
+                } else if (event.key.code == sf::Keyboard::Down) {
+                    tetromino.Move(0, 1);
+                } else if (event.key.code == sf::Keyboard::Left) {
+                    tetromino.Move(-1, 0);
+                } else if (event.key.code == sf::Keyboard::Right) {
+                    tetromino.Move(1, 0);
+                }
+            }
         }
 
         window.clear(sf::Color::White);
-        window.draw(sf::Sprite(texture));
-
-        for (int i = 0; i < square.GetSquareCount(); i++) {
-            sf::Sprite sprite = square.GetSprite(i);
-            sprite.setPosition(28 + i * side_length, 31 + i * side_length);
-            window.draw(sprite);
-        }
+        background.Draw(window);
+        tetromino.Draw(window);
 
         window.display();
     }
