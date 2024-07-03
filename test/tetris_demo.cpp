@@ -1,164 +1,204 @@
 #include <SFML/Graphics.hpp>
-#include <time.h>
+#include <cstdlib>
+#include <ctime>
+
 using namespace sf;
 
-const int M = 20; // 游戏区域的高度
-const int N = 10; // 游戏区域的宽度
+const int kGameHeight = 20; // 游戏区域的高度
+const int kGameWidth = 10;  // 游戏区域的宽度
 
-int field[M][N] = {0}; // 游戏区域的状态
+int field[kGameHeight][kGameWidth] = {0}; // 游戏区域的状态
 
 struct Point {
     int x, y;
-} a[4], b[4]; // a表示当前方块的四个点，b表示上一个状态的四个点
+} currentBlock[4],
+        previousBlock[4]; // currentBlock表示当前方块的四个点，previousBlock表示上一个状态的四个点
 
 int figures[7][4] = {
-    1, 3, 5, 7, // I
-    2, 4, 5, 7, // Z
-    3, 5, 4, 6, // S
-    3, 5, 4, 7, // T
-    2, 3, 5, 7, // L
-    3, 5, 7, 6, // J
-    2, 3, 4, 5  // O
+        1, 3, 5, 7, // I
+        2, 4, 5, 7, // Z
+        3, 5, 4, 6, // S
+        3, 5, 4, 7, // T
+        2, 3, 5, 7, // L
+        3, 5, 7, 6, // J
+        2, 3, 4, 5  // O
 };
 
 // 检查方块是否在有效区域内
-bool check() {
+bool isValidPosition() {
     for (int i = 0; i < 4; i++) {
-        if (a[i].x < 0 || a[i].x >= N || a[i].y < 0 || a[i].y >= M) return false;
-        else if (field[a[i].y][a[i].x]) return false;
+        if (currentBlock[i].x < 0 || currentBlock[i].x >= kGameWidth || currentBlock[i].y < 0 ||
+            currentBlock[i].y >= kGameHeight)
+            return false;
+        else if (field[currentBlock[i].y][currentBlock[i].x])
+            return false;
     }
     return true;
 }
 
-void test() {
-    srand(time(0));
+// 旋转方块
+void rotateBlock() {
+    Point center = currentBlock[1]; // 旋转中心
+    for (int i = 0; i < 4; i++) {
+        int x = currentBlock[i].y - center.y;
+        int y = currentBlock[i].x - center.x;
+        currentBlock[i].x = center.x - x;
+        currentBlock[i].y = center.y + y;
+    }
+    if (!isValidPosition()) {
+        for (int i = 0; i < 4; i++) currentBlock[i] = previousBlock[i];
+    }
+}
 
-    RenderWindow window(VideoMode(320, 480), "The Game!");
+// 移动方块
+void moveBlock(int dx) {
+    for (int i = 0; i < 4; i++) {
+        previousBlock[i] = currentBlock[i];
+        currentBlock[i].x += dx;
+    }
+    if (!isValidPosition()) {
+        for (int i = 0; i < 4; i++) currentBlock[i] = previousBlock[i];
+    }
+}
 
-    Texture t1, t2, t3;
-    t1.loadFromFile("images/tiles.png");
-    t2.loadFromFile("images/background.png");
-    // t3.loadFromFile("images/frame.png");
+// 下落方块
+void dropBlock() {
+    for (int i = 0; i < 4; i++) {
+        previousBlock[i] = currentBlock[i];
+        currentBlock[i].y += 1;
+    }
+    if (!isValidPosition()) {
+        bool gameOver = false;
+        for (int i = 0; i < 4; i++) {
+            if (previousBlock[i].y < 0) {
+                gameOver = true;
+                break;
+            }
+        }
+        if (gameOver) {
+            // 处理游戏结束
+            // window.close();
+            return;
+        } else {
+            for (int i = 0; i < 4; i++) {
+                field[previousBlock[i].y][previousBlock[i].x] = 1; // 设置方块的颜色
+            }
 
-    Sprite s(t1), background(t2);
-    // , frame(t3);
+            // 检查并消除满行
+            for (int i = kGameHeight - 1; i >= 0; i--) {
+                bool isFull = true;
+                for (int j = 0; j < kGameWidth; j++) {
+                    if (field[i][j] == 0) {
+                        isFull = false;
+                        break;
+                    }
+                }
+                if (isFull) {
+                    for (int k = i; k > 0; k--) {
+                        for (int j = 0; j < kGameWidth; j++) {
+                            field[k][j] = field[k - 1][j];
+                        }
+                    }
+                    i++; // 再次检查当前行
+                }
+            }
 
-    int dx = 0; // 水平移动的距离
-    bool rotate = false; // 是否旋转
-    int colorNum = 1; // 方块的颜色
-    float timer = 0, delay = 0.3; // 计时器和下落延迟
+            // 检查最高方块高度
+            int maxHeight = 0;
+            for (int i = 0; i < kGameHeight; i++) {
+                for (int j = 0; j < kGameWidth; j++) {
+                    if (field[i][j] != 0) {
+                        maxHeight = i + 1;
+                        break;
+                    }
+                }
+                if (maxHeight > 0) break;
+            }
+
+            if (maxHeight >= kGameHeight) {
+                // 处理游戏结束
+                // window.close();
+                return;
+            } else {
+                // 生成新的方块
+                int nextBlockType = rand() % 7;
+                for (int i = 0; i < 4; i++) {
+                    currentBlock[i].x = figures[nextBlockType][i] % 2 + kGameWidth / 2 - 1;
+                    currentBlock[i].y = figures[nextBlockType][i] / 2;
+                }
+            }
+        }
+    }
+}
+
+void renderGame(RenderWindow& window) {
+    // 清空窗口
+    window.clear(Color::White);
+
+    // 绘制游戏区域
+    for (int i = 0; i < kGameHeight; i++) {
+        for (int j = 0; j < kGameWidth; j++) {
+            if (field[i][j] == 0) continue;
+            // 绘制方块
+        }
+    }
+
+    // 绘制当前方块
+    for (int i = 0; i < 4; i++) {
+        // 绘制方块
+    }
+
+    // 显示窗口
+    window.display();
+}
+
+void runGame() {
+    srand(time(nullptr));
+
+    RenderWindow window(VideoMode(320, 480), "Tetris");
 
     Clock clock;
+    float timer = 0, delay = 0.3;
+    bool rotate = false;
+    int dx = 0;
 
-    // 初始化第一个方块
-    int n = rand() % 7;
+    int currentBlockType = rand() % 7;
     for (int i = 0; i < 4; i++) {
-        a[i].x = figures[n][i] % 2 + N / 2 - 1;
-        a[i].y = figures[n][i] / 2;
+        currentBlock[i].x = figures[currentBlockType][i] % 2 + kGameWidth / 2 - 1;
+        currentBlock[i].y = figures[currentBlockType][i] / 2;
     }
 
     while (window.isOpen()) {
-        float time = clock.getElapsedTime().asSeconds();
-        clock.restart();
-        timer += time;
+        float deltaTime = clock.restart().asSeconds();
+        timer += deltaTime;
 
         Event e;
         while (window.pollEvent(e)) {
             if (e.type == Event::Closed)
                 window.close();
-
-            if (e.type == Event::KeyPressed) {
-                if (e.key.code == Keyboard::Up) rotate = true;
-                else if (e.key.code == Keyboard::Left) dx = -1;
-                else if (e.key.code == Keyboard::Right) dx = 1;
+            else if (e.type == Event::KeyPressed) {
+                if (e.key.code == Keyboard::Up)
+                    rotate = true;
+                else if (e.key.code == Keyboard::Left)
+                    dx = -1;
+                else if (e.key.code == Keyboard::Right)
+                    dx = 1;
             }
         }
 
         if (Keyboard::isKeyPressed(Keyboard::Down)) delay = 0.05;
 
-        // 水平移动
-        for (int i = 0; i < 4; i++) { b[i] = a[i]; a[i].x += dx; }
-        if (!check()) for (int i = 0; i < 4; i++) a[i] = b[i];
+        // 移动方块
+        moveBlock(dx);
 
-        // 旋转
+        // 旋转方块
         if (rotate) {
-            Point p = a[1]; // 旋转中心
-            for (int i = 0; i < 4; i++) {
-                int x = a[i].y - p.y;
-                int y = a[i].x - p.x;
-                a[i].x = p.x - x;
-                a[i].y = p.y + y;
-            }
-            if (!check()) for (int i = 0; i < 4; i++) a[i] = b[i];
+            rotateBlock();
         }
 
-        // 下落
+        // 下落方块
         if (timer > delay) {
-            for (int i = 0; i < 4; i++) { b[i] = a[i]; a[i].y += 1; }
-
-            if (!check()) {
-                bool isGameOver = false;
-
-                for (int i = 0; i < 4; i++) {
-                    if (b[i].y < 0) { // 检查是否有方块到达顶部
-                        isGameOver = true;
-                        break;
-                    }
-                }
-
-                if (isGameOver) {
-                    // 游戏结束处理
-                    window.close();
-                } else {
-                    for (int i = 0; i < 4; i++) {
-                        field[b[i].y][b[i].x] = colorNum;
-                    }
-
-                    // 检查并消除满行
-                    for (int i = M - 1; i >= 0; i--) {
-                        bool isFull = true;
-                        for (int j = 0; j < N; j++) {
-                            if (field[i][j] == 0) {
-                                isFull = false;
-                                break;
-                            }
-                        }
-                        if (isFull) {
-                            for (int k = i; k > 0; k--) {
-                                for (int j = 0; j < N; j++) {
-                                    field[k][j] = field[k - 1][j];
-                                }
-                            }
-                            i++; // 再次检查当前行
-                        }
-                    }
-
-                    // 检查最高方块高度
-                    int maxHeight = 0;
-                    for (int i = 0; i < M; i++) {
-                        for (int j = 0; j < N; j++) {
-                            if (field[i][j] != 0) {
-                                maxHeight = i + 1;
-                                break;
-                            }
-                        }
-                        if (maxHeight > 0) break;
-                    }
-
-                    if (maxHeight >= M) {
-                        // 游戏结束处理
-                        window.close();
-                    } else {
-                        colorNum = 1 + rand() % 7;
-                        n = rand() % 7;
-                        for (int i = 0; i < 4; i++) {
-                            a[i].x = figures[n][i] % 2 + N / 2 - 1;
-                            a[i].y = figures[n][i] / 2;
-                        }
-                    }
-                }
-            }
-
+            dropBlock();
             timer = 0;
         }
 
@@ -166,28 +206,13 @@ void test() {
         rotate = false;
         delay = 0.3;
 
-        // 绘制游戏界面
-        window.clear(Color::White);
-        window.draw(background);
-
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j < N; j++) {
-                if (field[i][j] == 0) continue;
-                s.setTextureRect(IntRect(field[i][j] * 18, 0, 18, 18));
-                s.setPosition(j * 18, i * 18);
-                s.move(28, 31); // offset
-                window.draw(s);
-            }
-        }
-
-        for (int i = 0; i < 4; i++) {
-            s.setTextureRect(IntRect(colorNum * 18, 0, 18, 18));
-            s.setPosition(a[i].x * 18, a[i].y * 18);
-            s.move(28, 31); // offset
-            window.draw(s);
-        }
-
-        // window.draw(frame);
-        window.display();
+        // 渲染游戏界面
+        renderGame(window);
     }
+}
+
+int main() {
+    runGame();
+
+    return 0;
 }

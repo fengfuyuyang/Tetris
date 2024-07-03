@@ -1,39 +1,61 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <vector>
+#include "file_handler.h"
 
 class Square {
 public:
-    Square(float size, sf::Color color, sf::FloatRect bounds)
-            : m_size(size), m_color(color), m_bounds(bounds) {
-        m_shape.setSize(sf::Vector2f(m_size, m_size));
-        m_shape.setFillColor(color);
-        // 不需要边框，因此不设置 outline
-        // m_shape.setOutlineThickness(0.0F); // 这一行其实可以省略
+    explicit Square(const std::wstring& filename) {
+        std::wstring path = FileHandler::GetFullPath(filename);
+        std::string texture_path = FileHandler::ConvertToString(path);
+        if (!FileHandler::FileExists(path)) {
+            // 处理文件不存在的情况
+            throw std::runtime_error("File not found: " + texture_path);
+        }
+
+        // 加载纹理
+        if (!m_texture.loadFromFile(texture_path)) {
+            // 处理加载失败的情况
+            throw std::runtime_error("Failed to load texture from " + texture_path);
+        }
+
+        // 创建所有正方形的Sprite
+        CreateSprites();
     }
 
-    void setPosition(float x, float y) { m_shape.setPosition(x, y); }
+    // 获取正方形的边长
+    int GetSideLength() const { return m_texture.getSize().y; }
 
-    bool canRotate(sf::Vector2f newPos) const {
-        return m_bounds.contains(newPos.x, newPos.y) &&
-               m_bounds.contains(newPos.x + m_size, newPos.y + m_size);
+    // 获取正方形的数量
+    int GetSquareCount() const { return m_texture.getSize().x / GetSideLength(); }
+
+    // 获取指定编号的正方形的Sprite
+    sf::Sprite GetSprite(int n) const {
+        if (n < 0 || n >= GetSquareCount()) {
+            throw std::out_of_range("Invalid square index: " + std::to_string(n));
+        }
+
+        return m_sprites[n];
     }
-
-    bool canMove(float dx, float dy) const {
-        sf::Vector2f newPosition = m_shape.getPosition() + sf::Vector2f(dx, dy);
-        return m_bounds.contains(newPosition.x, newPosition.y) &&
-               m_bounds.contains(newPosition.x + m_size, newPosition.y + m_size);
-    }
-
-    void move(float dx, float dy) { m_shape.move(dx, dy); }
-
-    void draw(sf::RenderWindow& window) { window.draw(m_shape); }
-
-    sf::Vector2f getPosition() const { return m_shape.getPosition(); }
 
 private:
-    float m_size;               // 方块的边长
-    sf::Color m_color;          // 方块的颜色
-    sf::RectangleShape m_shape; // 方块的形状
-    sf::FloatRect m_bounds;     // 方块的移动范围
+    // 创建所有正方形的Sprite
+    void CreateSprites() {
+        // 遍历所有正方形的编号
+        for (int i = 0; i < GetSquareCount(); ++i) {
+            // 创建Sprite并设置纹理
+            sf::Sprite sprite(m_texture);
+
+            // 设置纹理矩形, 左上角坐标为(i * GetSideLength(), 0), 大小为(GetSideLength(), GetSideLength())
+            sprite.setTextureRect(
+                    sf::IntRect(i * GetSideLength(), 0, GetSideLength(), GetSideLength()));
+            m_sprites.push_back(sprite);
+        }
+    }
+
+    // 纹理
+    sf::Texture m_texture;
+    // 所有正方形的Sprite
+    std::vector<sf::Sprite> m_sprites;
 };
