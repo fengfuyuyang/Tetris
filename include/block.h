@@ -11,6 +11,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <list>
+#include <random>
 #include <vector>
 
 const int kTypeSize = 7;    // 方块种类个数
@@ -70,8 +71,10 @@ private:
     // 创建所有正方形的Sprite
     void CreateSprites();
 
+    // 以pos为中心顺时针旋转90度
     void RotatePoint90(int pos);
 
+    // 以pos为中心逆时针旋转90度
     void RotatePointNeg90(int pos);
 
     void CopyCurrentToPrevious();
@@ -80,7 +83,10 @@ private:
 
     void FixBlock();
 
+    // 清理满行
     void ClearLines();
+
+    void InitRandomEngine();
 
     // 纹理
     sf::Texture _texture;
@@ -89,4 +95,5 @@ private:
     // 当前方块类型
     BlockType _type;
     std::list<Point> _points;
+    std::mt19937 _random_engine;
 };

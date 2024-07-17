@@ -26,18 +26,42 @@ Block::Block(const std::wstring& filename) {
         throw std::runtime_error("Failed to load texture from " + texture_path);
     }
     CreateSprites();
+    InitRandomEngine();
 }
 
 void Block::GetNewBlock() {
-    _type = static_cast<BlockType>(rand() % kTypeSize);
-    int current_sprite = rand() % _sprites.size();
+    std::uniform_int_distribution<int> block_type_dist(0, kTypeSize - 1);
+    std::uniform_int_distribution<int> sprite_dist(0, _sprites.size() - 1);
+    std::uniform_int_distribution<int> rotation_dist(0, 3);
+
+    _type = static_cast<BlockType>(block_type_dist(_random_engine));
+    int current_sprite = sprite_dist(_random_engine);
 
     for (int i = 0; i < kBlockNum; i++) {
-        _current_block[i].x = _figures[_type][i] % 2 * -1 + kGameWidth / 2;
-
-        // 使得方块从底部开始落下, 依次进入游戏区域
+        _current_block[i].x = _figures[_type][i] % 2 * -1;
         _current_block[i].y = (_figures[_type][i] + 1) / 2 - kBlockNum;
         _current_block[i].sprite = _sprites[current_sprite];
+    }
+
+    // 起始方块旋转
+    int rotation = rotation_dist(_random_engine);
+    for (int i = 0; i < rotation; i++) {
+        Rotate();
+    }
+
+    // 矫正位置居中
+    int min_x = kGameWidth, max_x = 0;
+    for (int i = 0; i < kBlockNum; i++) {
+        if (_current_block[i].x < min_x) {
+            min_x = _current_block[i].x;
+        }
+        if (_current_block[i].x > max_x) {
+            max_x = _current_block[i].x;
+        }
+    }
+    int offset_x = (kGameWidth / 2) - ((max_x - min_x + 1) / 2 + min_x);
+    for (int i = 0; i < kBlockNum; i++) {
+        _current_block[i].x += offset_x;
     }
 }
 
@@ -74,9 +98,9 @@ void Block::Rotate() {
     switch (_type) {
     case BlockType::I: {
         if (_current_block[1].x != _current_block[2].x) {
-            RotatePointNeg90(1);
+            RotatePointNeg90(2);
         } else {
-            RotatePoint90(1);
+            RotatePoint90(2);
         }
 
         break;
@@ -297,4 +321,9 @@ void Block::ClearLines() {
             y++;
         }
     }
+}
+
+void Block::InitRandomEngine() {
+    std::random_device rd;
+    _random_engine = std::mt19937(rd());
 }
