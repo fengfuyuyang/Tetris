@@ -1,3 +1,12 @@
+/**
+ * @Author: fengfuyuyang@outlook.com
+ * @File Name: file_handler.h
+ * @File Version: 0.1
+ * @Create Time: 2024-07-17 11:13:57
+ * 
+ * Copyright (c) 2024 fengfuyuyang@outlook.com. All rights reserved.
+ */
+
 #pragma once
 
 #include <windows.h>

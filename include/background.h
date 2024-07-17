@@ -1,8 +1,23 @@
+/**
+ * @Author: fengfuyuyang@outlook.com
+ * @File Name: background.h
+ * @File Version: 0.1
+ * @Create Time: 2024-07-17 11:13:28
+ * 
+ * Copyright (c) 2024 fengfuyuyang@outlook.com. All rights reserved.
+ */
+
 #pragma once
 
 #include <SFML/Graphics.hpp>
 
 #include "file_handler.h"
+
+const int kGameHeight = 20; // 游戏区域的高度
+const int kGameWidth = 10;  // 游戏区域的宽度
+// 游戏区域左上角坐标
+const int X = 28;
+const int Y = 31;
 
 class Background {
 public:
@@ -26,18 +41,12 @@ public:
 
     // 获取网格的边界
     sf::FloatRect GetBounds() const {
-        return {static_cast<float>(X), static_cast<float>(Y), (M + 1) * cell_size,
-                (N + 1) * cell_size};
+        return {static_cast<float>(X), static_cast<float>(Y), (kGameHeight + 1) * cell_size,
+                (kGameHeight + 1) * cell_size};
     }
 
 private:
     sf::Texture texture;
-    // 网格大小
-    static const int M = 10;
-    static const int N = 20;
-    // 网格左上角坐标
-    static const int X = 28;
-    static const int Y = 31;
     // 网格单元大小
     float cell_size;
 };
