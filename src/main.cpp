@@ -21,7 +21,10 @@ void StartGame() {
     // 创建时钟
     sf::Clock clock;
     float timer = 0;
-    float delay = 0.3;
+    // 经典的任天堂俄罗斯方块版本中，不同等级的下落速度
+    const float fallSpeeds[] = {1.0F,  0.93F, 0.85F, 0.78F, 0.70F,
+                                0.63F, 0.55F, 0.48F, 0.40F, 0.30F};
+    float delay = fallSpeeds[4];
 
     while (window.isOpen()) {
         float time = clock.getElapsedTime().asSeconds();
@@ -65,7 +68,7 @@ void StartGame() {
     }
 }
 
-int main() {
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     StartGame();
     return 0;
 }
