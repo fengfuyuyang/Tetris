@@ -12,7 +12,7 @@
 
 int field[kGameHeight][kGameWidth] = {0}; // 游戏区域的状态
 
-Block::Block(const std::wstring& filename) {
+Block::Block(const std::wstring& filename) : _is_paused(false) {
     std::wstring path = FileHandler::GetFullPath(filename);
     std::string texture_path = FileHandler::ConvertToString(path);
     if (!FileHandler::FileExists(path)) {
@@ -94,6 +94,10 @@ bool Block::IsValidPosition() {
 
 // 旋转方块
 void Block::Rotate() {
+    if (_is_paused) {
+        return;
+    }
+
     CopyCurrentToPrevious();
     switch (_type) {
     case BlockType::I: {
@@ -160,6 +164,10 @@ void Block::Rotate() {
 
 // 移动方块
 void Block::Move(int dx, int dy) {
+    if (_is_paused) {
+        return;
+    }
+
     CopyCurrentToPrevious();
     for (int i = 0; i < kBlockNum; i++) {
         _current_block[i].x += dx;
@@ -172,6 +180,9 @@ void Block::Move(int dx, int dy) {
 
 // 下落方块
 void Block::Drop() {
+    if (_is_paused) {
+        return;
+    }
     CopyCurrentToPrevious();
     for (auto& it : _current_block) {
         it.y += 1;
@@ -183,6 +194,10 @@ void Block::Drop() {
 }
 
 void Block::DropToBottom() {
+    if (_is_paused) {
+        return;
+    }
+
     while (true) {
         CopyCurrentToPrevious();
         for (auto& it : _current_block) {
@@ -212,6 +227,10 @@ bool Block::IsGameOver() {
     }
     CopyPreviousToCurrent();
     return is_game_over;
+}
+
+void Block::ChangePauseStatus() {
+    _is_paused = !_is_paused;
 }
 
 // 获取正方形的边长

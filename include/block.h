@@ -41,6 +41,8 @@ public:
 
     bool IsGameOver();
 
+    void ChangePauseStatus();
+
 private:
     struct Point {
         int x;
@@ -96,4 +98,6 @@ private:
     BlockType _type;
     std::list<Point> _points;
     std::mt19937 _random_engine;
+    // 游戏是否处于暂停状态
+    bool _is_paused;
 };
