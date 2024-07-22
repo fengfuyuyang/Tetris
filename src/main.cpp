@@ -7,6 +7,8 @@
  * Copyright (c) 2024 fengfuyuyang@outlook.com. All rights reserved.
  */
 
+#include <vector>
+
 #include "background.h"
 #include "block.h"
 
@@ -22,9 +24,11 @@ void StartGame() {
     sf::Clock clock;
     float timer = 0;
     // 经典的任天堂俄罗斯方块版本中，不同等级的下落速度
-    const float fall_peeds[] = {1.0F,  0.93F, 0.85F, 0.78F, 0.70F,
-                                0.63F, 0.55F, 0.48F, 0.40F, 0.30F};
-    float delay = fall_peeds[4];
+    const std::vector<float> fall_speeds = {1.0F,  0.93F, 0.85F, 0.78F, 0.70F,
+                                            0.63F, 0.55F, 0.48F, 0.40F, 0.30F};
+    // 初始等级
+    int level = 4;
+    float delay = fall_speeds[level];
 
     while (window.isOpen()) {
         float time = clock.getElapsedTime().asSeconds();
@@ -36,18 +40,44 @@ void StartGame() {
                 window.close();
             }
             if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::Up) {
+                switch (event.key.code) {
+                case sf::Keyboard::Up:
                     block.Rotate();
-                } else if (event.key.code == sf::Keyboard::Down) {
+                    break;
+                case sf::Keyboard::Down:
                     block.Move(0, 1);
-                } else if (event.key.code == sf::Keyboard::Left) {
+                    break;
+                case sf::Keyboard::Left:
                     block.Move(-1, 0);
-                } else if (event.key.code == sf::Keyboard::Right) {
+                    break;
+                case sf::Keyboard::Right:
                     block.Move(1, 0);
-                } else if (event.key.code == sf::Keyboard::Space) {
+                    break;
+                case sf::Keyboard::Space:
                     block.DropToBottom();
-                } else if (event.key.code == sf::Keyboard::P) { // 按 P 键切换暂停状态
+                    break;
+                case sf::Keyboard::Add:
+                case sf::Keyboard::Equal:
+                    level = level + 1 >= fall_speeds.size() ? fall_speeds.size() - 1 : level + 1;
+                    delay = fall_speeds[level];
+                    break;
+                case sf::Keyboard::Subtract:
+                case sf::Keyboard::Hyphen:
+                    level = level - 1 < 0 ? 0 : level - 1;
+                    delay = fall_speeds[level];
+                    break;
+                case sf::Keyboard::P: // 按 P 键切换暂停状态
                     block.ChangePauseStatus();
+                    break;
+                case sf::Keyboard::R: // 按 R 键重新开始游戏
+                    block.Reset();
+                    timer = 0; // 重置计时器
+                    break;
+                case sf::Keyboard::Escape: // 按 Esc 键退出游戏
+                    window.close();
+                    break;
+                default:
+                    break;
                 }
             }
         }
@@ -59,7 +89,7 @@ void StartGame() {
         }
 
         if (block.IsGameOver()) {
-            window.close();
+            // window.close();
         }
 
         window.clear(sf::Color::White);

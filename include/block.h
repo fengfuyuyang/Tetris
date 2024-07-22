@@ -43,6 +43,8 @@ public:
 
     void ChangePauseStatus();
 
+    void Reset();
+
 private:
     struct Point {
         int x;

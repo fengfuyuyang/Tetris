@@ -37,21 +37,21 @@ void Block::GetNewBlock() {
     _type = static_cast<BlockType>(block_type_dist(_random_engine));
     int current_sprite = sprite_dist(_random_engine);
 
-    for (int i = 0; i < kBlockNum; i++) {
+    for (int i = 0; i < kBlockNum; ++i) {
         _current_block[i].x = _figures[_type][i] % 2 * -1;
-        _current_block[i].y = (_figures[_type][i] + 1) / 2 - kBlockNum;
+        _current_block[i].y = (_figures[_type][i] + 1) / 2 - kBlockNum - 1;
         _current_block[i].sprite = _sprites[current_sprite];
     }
 
     // 起始方块旋转
     int rotation = rotation_dist(_random_engine);
-    for (int i = 0; i < rotation; i++) {
+    for (int i = 0; i < rotation; ++i) {
         Rotate();
     }
 
     // 矫正位置居中
     int min_x = kGameWidth, max_x = 0;
-    for (int i = 0; i < kBlockNum; i++) {
+    for (int i = 0; i < kBlockNum; ++i) {
         if (_current_block[i].x < min_x) {
             min_x = _current_block[i].x;
         }
@@ -60,7 +60,7 @@ void Block::GetNewBlock() {
         }
     }
     int offset_x = (kGameWidth / 2) - ((max_x - min_x + 1) / 2 + min_x);
-    for (int i = 0; i < kBlockNum; i++) {
+    for (int i = 0; i < kBlockNum; ++i) {
         _current_block[i].x += offset_x;
     }
 }
@@ -169,7 +169,7 @@ void Block::Move(int dx, int dy) {
     }
 
     CopyCurrentToPrevious();
-    for (int i = 0; i < kBlockNum; i++) {
+    for (int i = 0; i < kBlockNum; ++i) {
         _current_block[i].x += dx;
         _current_block[i].y += dy;
     }
@@ -212,25 +212,40 @@ void Block::DropToBottom() {
 }
 
 bool Block::IsGameOver() {
-    bool is_game_over = false;
-    CopyCurrentToPrevious();
+    bool has_block_below = false;
+    bool has_block_at_top = false;
+
     for (auto& it : _current_block) {
-        it.y += 1;
-    }
-    if (!IsValidPosition()) {
-        for (auto& it : _current_block) {
-            if (it.y <= 0) {
-                is_game_over = true;
-                break;
-            }
+        if (field[it.y + 1][it.x]) {
+            has_block_below = true;
+        }
+        if (it.y <= 0) {
+            has_block_at_top = true;
+        }
+
+        // 若当前方块下方有方块且当前方块位于顶部，则游戏结束
+        if (has_block_below && has_block_at_top) {
+            _is_paused = true;
+            return true;
         }
     }
-    CopyPreviousToCurrent();
-    return is_game_over;
+
+    return false;
 }
 
 void Block::ChangePauseStatus() {
     _is_paused = !_is_paused;
+}
+
+void Block::Reset() {
+    for (int i = 0; i < kGameHeight; ++i) {
+        for (int j = 0; j < kGameWidth; ++j) {
+            field[i][j] = 0;
+        }
+    }
+    _points.clear();
+    _is_paused = false;
+    GetNewBlock();
 }
 
 // 获取正方形的边长
